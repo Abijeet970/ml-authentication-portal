@@ -2,29 +2,78 @@ import { useState, useCallback, useEffect } from 'react';
 import { Login } from './components/Login';
 import { FallbackModal } from './components/FallbackModal';
 import { Dashboard } from './components/Dashboard';
+import { useBehaviorTracker } from './hooks/useBehaviorTracker';
+import { verifyBehavior } from './services/api';
 
 function App() {
   const [view, setView] = useState<'login' | 'dashboard'>('login');
-  
-  // This state variable stores the simulated ML confidence score
-  const [mlConfidence, setMlConfidence] = useState<number>(1.0);
   const [showFallback, setShowFallback] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  // Expose ML confidence to window for easy demo testing
+  const { collectPayload } = useBehaviorTracker();
+
+  // Debug override — keep for demo flexibility
+  const [debugConfidence, setDebugConfidence] = useState<number | null>(null);
+
   useEffect(() => {
-    (window as any).setMlConfidence = (score: number) => setMlConfidence(score);
-    console.log("Run window.setMlConfidence(0.8) to lower confidence score");
+    (window as any).setMlConfidence = (score: number) => {
+      setDebugConfidence(score);
+      console.log(
+        `%c[Secura] Debug override: confidence set to ${score}`,
+        'color: #f59e0b; font-weight: bold;'
+      );
+    };
+    console.log(
+      '%c[Secura Portal] ML Authentication System Active',
+      'color: #2563eb; font-weight: bold; font-size: 14px;'
+    );
+    console.log(
+      'Debug: run window.setMlConfidence(0.5) to force low confidence'
+    );
   }, []);
 
-  const handleLoginClick = useCallback(() => {
-    if (mlConfidence < 0.85) {
-      // Need manual verification
-      setShowFallback(true);
-    } else {
-      // Direct success
+  const handleLoginClick = useCallback(async () => {
+    setIsVerifying(true);
+
+    try {
+      // Step 1: Collect all behavioral data
+      const payload = await collectPayload();
+
+      // Step 2: Send to backend for ML scoring
+      const result = await verifyBehavior(payload);
+
+      // Allow debug override
+      const finalConfidence = debugConfidence ?? result.confidence;
+      const finalDecision = debugConfidence !== null
+        ? (debugConfidence >= 0.85 ? 'PASS' : debugConfidence >= 0.60 ? 'FALLBACK' : 'BLOCK')
+        : result.decision;
+
+      // Log result for demo terminal visibility
+      console.log(
+        '%c[Secura] ML Verification Result',
+        'color: #10b981; font-weight: bold;',
+        {
+          confidence: finalConfidence,
+          decision: finalDecision,
+          breakdown: result.breakdown,
+          requestId: result.request_id,
+        }
+      );
+
+      // Step 3: Route based on decision
+      if (finalDecision === 'PASS') {
+        setView('dashboard');
+      } else {
+        setShowFallback(true);
+      }
+    } catch (error) {
+      console.error('[Secura] Verification error:', error);
+      // On error, let user through (fail-open for UX)
       setView('dashboard');
+    } finally {
+      setIsVerifying(false);
     }
-  }, [mlConfidence]);
+  }, [collectPayload, debugConfidence]);
 
   const handleVerified = useCallback(() => {
     setShowFallback(false);
@@ -41,7 +90,7 @@ function App() {
 
   return (
     <>
-      <Login onLoginClick={handleLoginClick} />
+      <Login onLoginClick={handleLoginClick} isVerifying={isVerifying} />
       {showFallback && (
         <FallbackModal onVerified={handleVerified} onCancel={handleCancel} />
       )}

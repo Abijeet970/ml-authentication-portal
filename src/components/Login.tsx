@@ -3,9 +3,10 @@ import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
 
 interface LoginProps {
   onLoginClick: () => void;
+  isVerifying?: boolean;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginClick }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginClick, isVerifying = false }) => {
   useBehaviorTracker();
 
   useEffect(() => {
@@ -84,9 +85,18 @@ export const Login: React.FC<LoginProps> = ({ onLoginClick }) => {
               <label className="text-sm text-slate-600 dark:text-slate-400" htmlFor="remember">Keep me signed in</label>
             </div>
             
-            <button onClick={onLoginClick} className="w-full h-12 bg-black text-white font-bold rounded hover:bg-slate-800 active:scale-[0.99] transition-all flex items-center justify-center space-x-2 opacity-0 animate-fade-in-up delay-4 shadow-xl shadow-black/10">
-              <span>Log In</span>
-              <span className="material-symbols-outlined text-[18px]">login</span>
+            <button onClick={onLoginClick} disabled={isVerifying} className={`w-full h-12 bg-black text-white font-bold rounded hover:bg-slate-800 active:scale-[0.99] transition-all flex items-center justify-center space-x-2 opacity-0 animate-fade-in-up delay-4 shadow-xl shadow-black/10 ${isVerifying ? 'opacity-80 cursor-wait' : ''}`}>
+              {isVerifying ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  <span>Verifying...</span>
+                </>
+              ) : (
+                <>
+                  <span>Log In</span>
+                  <span className="material-symbols-outlined text-[18px]">login</span>
+                </>
+              )}
             </button>
           </div>
           
