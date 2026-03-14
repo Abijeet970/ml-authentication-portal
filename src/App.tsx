@@ -67,9 +67,8 @@ function App() {
         setShowFallback(true);
       }
     } catch (error) {
-      console.error('[Secura] Verification error:', error);
-      // On error, let user through (fail-open for UX)
-      setView('dashboard');
+      console.warn('[Secura] Verification error — staying on login page:', error);
+      // Stay on login page on error (fail-safe) — don't skip auth
     } finally {
       setIsVerifying(false);
     }
