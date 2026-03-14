@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Security Verification - Smart Fallback</title>
+<!-- Tailwind CSS v3 CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- BEGIN: Custom Configurations -->
+<script>tailwind.config = {theme: {extend: {colors: {enterprise: {blue: "#137fec", dark: "#0f172a", light: "#f8fafc"}, primary: "#000000", "background-light": "#f7f7f7", "background-dark": "#191919"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<!-- END: Custom Configurations -->
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="background-blur">
+/* Updated background to simulate a blurred white/clean enterprise login page with geometric shapes */
+.bg-login-simulated {
+    background-color: #f8fafc;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(19, 127, 236, 0.05) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, rgba(255, 255, 255, 1) 0, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(19, 127, 236, 0.05) 0, transparent 50%),
+        white;
+    background-size: cover;
+    filter: blur(40px);
+    transform: scale(1.1);
+}
+.overlay-lighten {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Geometric shapes styles */
+.shape {
+    position: absolute;
+    opacity: 0.15;
+    z-index: 5;
+}
+.circle {
+    border-radius: 50%;
+    background: #137fec;
+}
+.square {
+    background: #0f172a;
+    transform: rotate(15deg);
+}
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 50px solid transparent;
+    border-right: 50px solid transparent;
+    border-bottom: 86.6px solid #137fec;
+    background: transparent !important;
+}
+</style>
+<style data-purpose="slider-interaction">
+    /* Custom styling for the slider thumb and track interaction */
+    #verify-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 48px;
+      height: 48px;
+      background: white;
+      border: 2px solid #137fec;
+      border-radius: 8px;
+      cursor: grab;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23137fec' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 5l7 7-7 7M5 5l7 7-7 7' /%3E%3C/svg%3E");
+      background-size: 24px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    #verify-slider::-moz-range-thumb {
+      width: 48px;
+      height: 48px;
+      background: white;
+      border: 2px solid #137fec;
+      border-radius: 8px;
+      cursor: grab;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23137fec' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13 5l7 7-7 7M5 5l7 7-7 7' /%3E%3C/svg%3E");
+      background-size: 24px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    #verify-slider:active::-webkit-slider-thumb {
+      cursor: grabbing;
+      background-color: #f0f7ff;
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="antialiased font-sans h-screen w-full overflow-hidden flex items-center justify-center bg-white">
+<!-- BEGIN: Blurred Background Wrapper -->
+<div aria-hidden="true" class="fixed inset-0 z-0 bg-login-simulated"></div>
+<!-- BEGIN: Background Geometric Shapes (behind the light overlay) -->
+<div aria-hidden="true" class="fixed inset-0 z-5 pointer-events-none overflow-hidden">
+<div class="shape circle w-64 h-64 -top-20 -left-20"></div>
+<div class="shape square w-48 h-48 top-1/4 -right-10 opacity-10"></div>
+<div class="shape triangle bottom-10 left-1/4 rotate-45"></div>
+<div class="shape circle w-32 h-32 bottom-20 -right-5 bg-enterprise-blue"></div>
+<div class="shape square w-24 h-24 top-10 left-1/2 opacity-5"></div>
+</div>
+<div aria-hidden="true" class="fixed inset-0 z-10 overlay-lighten"></div>
+<!-- END: Blurred Background Wrapper -->
+<!-- BEGIN: Security Modal -->
+<main class="relative z-50 w-full max-w-md px-6" data-purpose="security-modal-container">
+<div class="bg-white rounded-2xl shadow-2xl p-8 md:p-10 border border-slate-200">
+<!-- BEGIN: Icon Header -->
+<div class="flex flex-col items-center mb-6" data-purpose="modal-header">
+<div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+<!-- Subtle Security Shield Icon -->
+<svg class="w-8 h-8 text-enterprise-blue" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+</svg>
+</div>
+<h1 class="text-2xl font-bold text-slate-900 tracking-tight">Verification Required</h1>
+<p class="text-slate-500 text-center mt-2 leading-relaxed">
+          We detected unusual interaction timing. <br class="hidden sm:block"/>Please confirm you are human.
+        </p>
+</div>
+<!-- END: Icon Header -->
+<!-- BEGIN: Verification Slider -->
+<div class="mt-8 space-y-4" data-purpose="verification-form">
+<div class="relative flex items-center h-14 bg-slate-100 rounded-xl px-1 border border-slate-200 overflow-hidden">
+<!-- Track Label (Visual Only) -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<span class="text-sm font-medium text-slate-400 uppercase tracking-widest select-none">Slide to Verify</span>
+</div>
+<!-- Functional Slider -->
+<input class="w-full h-full appearance-none bg-transparent relative z-20 cursor-pointer" id="verify-slider" max="100" min="0" onchange="checkVerification(this.value)" oninput="handleSliderChange(this.value)" type="range" value="0"/>
+<!-- Dynamic Progress Background -->
+<div class="absolute left-0 top-0 h-full bg-enterprise-blue opacity-10 transition-all duration-75" id="slider-progress" style="width: 0%"></div>
+</div>
+<!-- Cancel/Back Link -->
+<div class="pt-4 text-center">
+<button class="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-tight" type="button">
+            Cancel and Return
+          </button>
+</div>
+</div>
+<!-- END: Verification Slider -->
+<!-- BEGIN: Trust Footer -->
+<div class="mt-8 flex items-center justify-center space-x-2 text-xs text-slate-400 border-t border-slate-100 pt-6" data-purpose="security-footer">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+<span>Secure Enterprise Verification</span>
+</div>
+<!-- END: Trust Footer -->
+</div>
+</main>
+<!-- END: Security Modal -->
+<!-- BEGIN: Verification Logic -->
+<script data-purpose="event-handlers">
+    /**
+     * Updates the UI as the user drags the slider
+     */
+    function handleSliderChange(value) {
+      const progress = document.getElementById('slider-progress');
+      progress.style.width = value + '%';
+    }
+
+    /**
+     * Finalizes verification when user releases the slider
+     */
+    function checkVerification(value) {
+      const slider = document.getElementById('verify-slider');
+      const progress = document.getElementById('slider-progress');
+      
+      if (parseInt(value) > 95) {
+        // Success State
+        slider.disabled = true;
+        slider.value = 100;
+        progress.style.width = '100%';
+        progress.classList.replace('opacity-10', 'opacity-20');
+        
+        // Visual Feedback (Normally would redirect or close modal)
+        const heading = document.querySelector('h1');
+        heading.innerText = "Verified";
+        heading.classList.add('text-green-600');
+        
+        setTimeout(() => {
+          alert('Verification Successful. Resuming your session...');
+          // Logic to close modal or reload page would go here
+        }, 500);
+      } else {
+        // Reset if not slid to the end
+        slider.value = 0;
+        progress.style.width = '0%';
+      }
+    }
+  </script>
+<!-- END: Verification Logic -->
+</body></html>
